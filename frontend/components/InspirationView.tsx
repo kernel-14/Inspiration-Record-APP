@@ -38,6 +38,7 @@ export const InspirationView: React.FC<InspirationViewProps> = ({
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [isTagsExpanded, setIsTagsExpanded] = useState(false);
 
   const handleAddInspiration = async (content: string, isVoice: boolean) => {
     if (onAdd) {
@@ -99,7 +100,10 @@ export const InspirationView: React.FC<InspirationViewProps> = ({
         <div className="w-full max-w-md mx-auto">
           {/* 标签筛选标题 */}
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-sm text-slate-600">
+            <button
+              onClick={() => setIsTagsExpanded(!isTagsExpanded)}
+              className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800 transition-colors"
+            >
               <Tag size={16} />
               <span className="font-medium">按标签筛选</span>
               {selectedTags.length > 0 && (
@@ -107,7 +111,15 @@ export const InspirationView: React.FC<InspirationViewProps> = ({
                   ({selectedTags.length} 个已选)
                 </span>
               )}
-            </div>
+              <svg
+                className={`w-4 h-4 transition-transform duration-200 ${isTagsExpanded ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
             {selectedTags.length > 0 && (
               <button
                 onClick={clearFilters}
@@ -118,43 +130,50 @@ export const InspirationView: React.FC<InspirationViewProps> = ({
             )}
           </div>
 
-          {/* 标签列表 */}
-          <div className="flex flex-wrap gap-2">
-            {tagStats.map(({ tag, count }) => {
-              const isSelected = selectedTags.includes(tag);
-              
-              return (
-                <button
-                  key={tag}
-                  onClick={() => toggleTag(tag)}
-                  className={`
-                    group relative px-3 py-1.5 rounded-lg text-xs font-medium
-                    border transition-all duration-200
-                    ${isSelected 
-                      ? 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm scale-105' 
-                      : 'bg-white/60 text-slate-600 border-slate-200 hover:bg-white/80'
-                    }
-                  `}
-                >
-                  <span className="flex items-center gap-1.5">
-                    {tag}
-                    <span className={`
-                      text-[10px] px-1.5 py-0.5 rounded-full
+          {/* 标签列表 - 可折叠 */}
+          <div
+            className={`
+              overflow-hidden transition-all duration-300 ease-in-out
+              ${isTagsExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}
+            `}
+          >
+            <div className="flex flex-wrap gap-2 pb-3">
+              {tagStats.map(({ tag, count }) => {
+                const isSelected = selectedTags.includes(tag);
+                
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
+                    className={`
+                      group relative px-3 py-1.5 rounded-lg text-xs font-medium
+                      border transition-all duration-200
                       ${isSelected 
-                        ? 'bg-purple-200/60 text-purple-700' 
-                        : 'bg-slate-100'
+                        ? 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm scale-105' 
+                        : 'bg-white/60 text-slate-600 border-slate-200 hover:bg-white/80'
                       }
-                    `}>
-                      {count}
+                    `}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      {tag}
+                      <span className={`
+                        text-[10px] px-1.5 py-0.5 rounded-full
+                        ${isSelected 
+                          ? 'bg-purple-200/60 text-purple-700' 
+                          : 'bg-slate-100'
+                        }
+                      `}>
+                        {count}
+                      </span>
                     </span>
-                  </span>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* 筛选结果统计 */}
-          <div className="mt-3 text-xs text-slate-500">
+          <div className="text-xs text-slate-500">
             显示 {filteredItems.length} / {items.length} 条灵感
           </div>
         </div>
