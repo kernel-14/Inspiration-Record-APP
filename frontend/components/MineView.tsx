@@ -10,21 +10,23 @@ interface MineViewProps {
 
 export const MineView: React.FC<MineViewProps> = ({ profile, deviceStatus }) => {
   return (
-    <div className="w-full h-full flex flex-col pt-12 px-6 pb-32 overflow-y-auto no-scrollbar scroll-smooth">
-      {/* Top Spacer for Profile Image */}
-      <div className="h-4" />
-      
-      {/* Profile Section */}
-      <ProfileCard profile={profile} />
+    <div className="w-full h-full flex flex-col pt-12 pb-32 overflow-y-auto no-scrollbar scroll-smooth">
+      <div className="w-full max-w-md mx-auto px-6">
+        {/* Top Spacer for Profile Image */}
+        <div className="h-4" />
+        
+        {/* Profile Section */}
+        <ProfileCard profile={profile} />
 
-      {/* Spacer for flow */}
-      <div className="h-6" />
+        {/* Spacer for flow */}
+        <div className="h-6" />
 
-      {/* Device Section */}
-      <DeviceCard status={deviceStatus} />
+        {/* Device Section */}
+        <DeviceCard status={deviceStatus} />
 
-      {/* Bottom padding to ensure content isn't hidden by nav */}
-      <div className="h-24" />
+        {/* Bottom padding to ensure content isn't hidden by nav */}
+        <div className="h-24" />
+      </div>
     </div>
   );
 };

@@ -36,16 +36,17 @@ export const RecordView: React.FC<RecordViewProps> = ({ items }) => {
   }, [items]);
 
   return (
-    <div className="w-full h-full flex flex-col pt-16 px-6 pb-32 overflow-y-auto no-scrollbar scroll-smooth">
-      {/* Subtle Header */}
-      <div className="mb-10 text-center opacity-0 animate-[fadeSlideUp_1s_ease-out_forwards]">
-        <h2 className="text-xl font-light text-slate-600/60 tracking-tight font-serif italic">
-          Your words, gently kept.
-        </h2>
-      </div>
+    <div className="w-full h-full flex flex-col pt-16 pb-32 overflow-y-auto no-scrollbar scroll-smooth">
+      <div className="w-full max-w-md mx-auto px-6">
+        {/* Subtle Header */}
+        <div className="mb-10 text-center opacity-0 animate-[fadeSlideUp_1s_ease-out_forwards]">
+          <h2 className="text-xl font-light text-slate-600/60 tracking-tight font-serif italic">
+            Your words, gently kept.
+          </h2>
+        </div>
 
-      {/* List of Groups */}
-      <div className="flex flex-col gap-8">
+        {/* List of Groups */}
+        <div className="flex flex-col gap-8">
         {Object.entries(groupedItems).map(([dateLabel, groupItems], groupIndex) => (
           <div key={dateLabel} className="flex flex-col">
             {/* Date Group Header - Extremely subtle */}
@@ -70,10 +71,11 @@ export const RecordView: React.FC<RecordViewProps> = ({ items }) => {
             </div>
           </div>
         ))}
+        </div>
+        
+        {/* Spacer for bottom nav */}
+        <div className="h-20" />
       </div>
-      
-      {/* Spacer for bottom nav */}
-      <div className="h-20" />
     </div>
   );
 };
