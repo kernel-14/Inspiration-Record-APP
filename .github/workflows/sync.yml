@@ -2,7 +2,6 @@ name: Sync to Hugging Face hub
 on:
   push:
     branches: [main]
-  # 允许手动触发
   workflow_dispatch:
 
 jobs:
@@ -17,10 +16,10 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-        # 临时删除图片文件夹再推送
-        rm -rf generated_images
-        git config --global user.email "bot@github.com"
-        git config --global user.name "GitHub Action"
-        git add .
-        git commit -m "temp remove binaries for sync" || echo "No changes to commit"
-        git push --force https://kernel-14:$HF_TOKEN@huggingface.co/spaces/kernel-14/Nora main
+          # 必须保证下面每一行命令的缩进完全一致
+          rm -rf generated_images
+          git config --global user.email "bot@github.com"
+          git config --global user.name "GitHub Action"
+          git add .
+          git commit -m "temp remove binaries for sync" || echo "No changes to commit"
+          git push --force https://kernel-14:$HF_TOKEN@huggingface.co/spaces/kernel-14/Nora main
