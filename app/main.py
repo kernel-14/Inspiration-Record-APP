@@ -13,6 +13,8 @@ from datetime import datetime
 from typing import Optional
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import init_config, get_config
 from app.logging_config import setup_logging, set_request_id, clear_request_id
@@ -79,6 +81,21 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # Vite default port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files for generated images
+from pathlib import Path
+generated_images_dir = Path("generated_images")
+generated_images_dir.mkdir(exist_ok=True)
+app.mount("/generated_images", StaticFiles(directory="generated_images"), name="generated_images")
 
 
 @app.get("/")
@@ -404,6 +421,543 @@ async def process_input(
                 "detail": str(e),
                 "timestamp": timestamp
             }
+        )
+
+
+@app.get("/api/records")
+async def get_records():
+    """Get all records."""
+    try:
+        config = get_config()
+        storage_service = StorageService(str(config.data_dir))
+        records = storage_service._read_json_file(storage_service.records_file)
+        return {"records": records}
+    except Exception as e:
+        logger.error(f"Failed to get records: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
+
+@app.get("/api/moods")
+async def get_moods():
+    """Get all moods."""
+    try:
+        config = get_config()
+        storage_service = StorageService(str(config.data_dir))
+        moods = storage_service._read_json_file(storage_service.moods_file)
+        return {"moods": moods}
+    except Exception as e:
+        logger.error(f"Failed to get moods: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
+
+@app.get("/api/inspirations")
+async def get_inspirations():
+    """Get all inspirations."""
+    try:
+        config = get_config()
+        storage_service = StorageService(str(config.data_dir))
+        inspirations = storage_service._read_json_file(storage_service.inspirations_file)
+        return {"inspirations": inspirations}
+    except Exception as e:
+        logger.error(f"Failed to get inspirations: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
+
+@app.get("/api/todos")
+async def get_todos():
+    """Get all todos."""
+    try:
+        config = get_config()
+        storage_service = StorageService(str(config.data_dir))
+        todos = storage_service._read_json_file(storage_service.todos_file)
+        return {"todos": todos}
+    except Exception as e:
+        logger.error(f"Failed to get todos: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
+
+@app.patch("/api/todos/{todo_id}")
+async def update_todo(todo_id: str, status: str = Form(...)):
+    """Update todo status."""
+    try:
+        config = get_config()
+        storage_service = StorageService(str(config.data_dir))
+        todos = storage_service._read_json_file(storage_service.todos_file)
+        
+        # Find and update todo
+        updated = False
+        for todo in todos:
+            if todo.get("record_id") == todo_id or str(hash(todo.get("task", ""))) == todo_id:
+                todo["status"] = status
+                updated = True
+                break
+        
+        if not updated:
+            return JSONResponse(
+                status_code=404,
+                content={"error": "Todo not found"}
+            )
+        
+        storage_service._write_json_file(storage_service.todos_file, todos)
+        return {"success": True}
+    except Exception as e:
+        logger.error(f"Failed to update todo: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
+
+@app.post("/api/chat")
+async def chat_with_ai(text: str = Form(...)):
+    """Chat with AI assistant."""
+    try:
+        config = get_config()
+        parser_service = SemanticParserService(config.zhipu_api_key)
+        
+        try:
+            # 使用语义解析服务的底层 API 进行对话
+            # 这里我们直接调用智谱 AI 进行对话
+            import httpx
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {config.zhipu_api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": "glm-4-flash",
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "你是一个温柔、善解人意的AI陪伴助手。你的名字叫小喵。你会用温暖、治愈的语气和用户聊天，给予他们情感支持和陪伴。回复要简短、自然、有温度。"
+                            },
+                            {
+                                "role": "user",
+                                "content": text
+                            }
+                        ],
+                        "temperature": 0.8,
+                        "top_p": 0.9
+                    },
+                    timeout=30.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    ai_response = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    return {"response": ai_response}
+                else:
+                    logger.error(f"AI chat failed: {response.status_code} {response.text}")
+                    return {"response": "抱歉，我现在有点累了，稍后再聊好吗？"}
+        
+        finally:
+            await parser_service.close()
+            
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        return {"response": "抱歉，我现在有点累了，稍后再聊好吗？"}
+
+
+@app.get("/api/user/config")
+async def get_user_config():
+    """Get user configuration including character image."""
+    try:
+        from app.user_config import UserConfig
+        from pathlib import Path
+        import os
+        
+        config = get_config()
+        user_config = UserConfig(str(config.data_dir))
+        user_data = user_config.load_config()
+        
+        # 如果没有保存的图片，尝试加载最新的本地图片
+        if not user_data.get('character', {}).get('image_url'):
+            generated_images_dir = Path("generated_images")
+            if generated_images_dir.exists():
+                # 获取所有图片文件
+                image_files = list(generated_images_dir.glob("character_*.jpeg"))
+                if image_files:
+                    # 按修改时间排序，获取最新的
+                    latest_image = max(image_files, key=lambda p: p.stat().st_mtime)
+                    
+                    # 构建 URL 路径
+                    image_url = f"http://localhost:8000/generated_images/{latest_image.name}"
+                    
+                    # 从文件名提取偏好设置
+                    # 格式: character_颜色_性格_时间戳.jpeg
+                    parts = latest_image.stem.split('_')
+                    if len(parts) >= 3:
+                        color = parts[1]
+                        personality = parts[2]
+                        
+                        # 更新配置
+                        user_config.save_character_image(
+                            image_url=str(latest_image),
+                            prompt=f"Character with {color} and {personality}",
+                            preferences={
+                                "color": color,
+                                "personality": personality,
+                                "appearance": "无配饰",
+                                "role": "陪伴式朋友"
+                            }
+                        )
+                        
+                        # 重新加载配置
+                        user_data = user_config.load_config()
+                        
+                        logger.info(f"Loaded latest local image: {latest_image.name}")
+        
+        # 如果 image_url 是本地路径，转换为 URL
+        image_url = user_data.get('character', {}).get('image_url')
+        if image_url and not image_url.startswith('http'):
+            # 本地路径，转换为 URL（处理 Windows 和 Unix 路径）
+            image_path = Path(image_url)
+            if image_path.exists():
+                # 使用正斜杠构建 URL
+                user_data['character']['image_url'] = f"http://localhost:8000/generated_images/{image_path.name}"
+            else:
+                # 如果路径不存在，尝试只使用文件名
+                filename = image_path.name
+                full_path = Path("generated_images") / filename
+                if full_path.exists():
+                    user_data['character']['image_url'] = f"http://localhost:8000/generated_images/{filename}"
+                    logger.info(f"Converted path to URL: {filename}")
+        
+        return user_data
+    except Exception as e:
+        logger.error(f"Failed to get user config: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
+
+@app.post("/api/character/generate")
+async def generate_character(
+    color: str = Form(...),
+    personality: str = Form(...),
+    appearance: str = Form(...),
+    role: str = Form(...)
+):
+    """Generate AI character image based on preferences.
+    
+    Args:
+        color: Color preference (温暖粉/天空蓝/薄荷绿等)
+        personality: Personality trait (活泼/温柔/聪明等)
+        appearance: Appearance feature (戴眼镜/戴帽子等)
+        role: Character role (陪伴式朋友/温柔照顾型长辈等)
+    
+    Returns:
+        JSON with image_url, prompt, and preferences
+    """
+    try:
+        from app.image_service import ImageGenerationService, ImageGenerationError
+        from app.user_config import UserConfig
+        from datetime import datetime
+        from pathlib import Path
+        import httpx
+        
+        config = get_config()
+        
+        # 检查是否配置了 MiniMax API
+        minimax_api_key = getattr(config, 'minimax_api_key', None)
+        
+        if not minimax_api_key:
+            logger.warning("MiniMax API key not configured")
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": "MiniMax API 未配置",
+                    "detail": "请在 .env 文件中配置 MINIMAX_API_KEY。访问 https://platform.minimaxi.com/ 获取 API 密钥。"
+                }
+            )
+        
+        # 初始化服务
+        image_service = ImageGenerationService(
+            api_key=minimax_api_key,
+            group_id=getattr(config, 'minimax_group_id', None)
+        )
+        user_config = UserConfig(str(config.data_dir))
+        
+        try:
+            logger.info(
+                f"Generating character image: "
+                f"color={color}, personality={personality}, "
+                f"appearance={appearance}, role={role}"
+            )
+            
+            # 生成图像
+            result = await image_service.generate_image(
+                color=color,
+                personality=personality,
+                appearance=appearance,
+                role=role,
+                aspect_ratio="1:1",
+                n=1
+            )
+            
+            # 下载图片到本地
+            generated_images_dir = Path("generated_images")
+            generated_images_dir.mkdir(exist_ok=True)
+            
+            # 生成文件名：character_颜色_性格_时间戳.jpeg
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"character_{color}_{personality}_{timestamp}.jpeg"
+            local_path = generated_images_dir / filename
+            
+            logger.info(f"Downloading image to: {local_path}")
+            
+            # 下载图片
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.get(result['url'])
+                if response.status_code == 200:
+                    with open(local_path, 'wb') as f:
+                        f.write(response.content)
+                    logger.info(f"Image saved to: {local_path}")
+                else:
+                    logger.error(f"Failed to download image: HTTP {response.status_code}")
+                    # 如果下载失败，仍然使用远程 URL
+                    local_path = None
+            
+            # 保存到用户配置
+            preferences = {
+                "color": color,
+                "personality": personality,
+                "appearance": appearance,
+                "role": role
+            }
+            
+            # 使用本地路径（如果下载成功）
+            image_url = str(local_path) if local_path else result['url']
+            
+            user_config.save_character_image(
+                image_url=image_url,
+                prompt=result['prompt'],
+                revised_prompt=result.get('metadata', {}).get('revised_prompt'),
+                preferences=preferences
+            )
+            
+            logger.info(f"Character image generated and saved: {image_url}")
+            
+            return {
+                "success": True,
+                "image_url": image_url,
+                "prompt": result['prompt'],
+                "preferences": preferences,
+                "task_id": result.get('task_id')
+            }
+        
+        finally:
+            await image_service.close()
+    
+    except ImageGenerationError as e:
+        logger.error(f"Image generation error: {e.message}")
+        
+        # 提供更友好的错误信息
+        error_detail = e.message
+        if "invalid api key" in e.message.lower():
+            error_detail = "API 密钥无效，请检查 MINIMAX_API_KEY 配置是否正确"
+        elif "quota" in e.message.lower() or "配额" in e.message:
+            error_detail = "API 配额不足，请充值或等待配额恢复"
+        elif "timeout" in e.message.lower() or "超时" in e.message:
+            error_detail = "请求超时，请检查网络连接后重试"
+        
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "图像生成失败",
+                "detail": error_detail
+            }
+        )
+    
+    except Exception as e:
+        logger.error(f"Failed to generate character: {e}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "生成角色形象失败",
+                "detail": str(e)
+            }
+        )
+
+
+@app.get("/api/character/history")
+async def get_character_history():
+    """Get list of all generated character images.
+    
+    Returns:
+        JSON with list of historical character images
+    """
+    try:
+        from pathlib import Path
+        import os
+        
+        generated_images_dir = Path("generated_images")
+        
+        if not generated_images_dir.exists():
+            return {"images": []}
+        
+        # 获取所有图片文件
+        image_files = []
+        for file in generated_images_dir.glob("character_*.jpeg"):
+            # 解析文件名：character_颜色_性格_时间戳.jpeg
+            parts = file.stem.split("_")
+            if len(parts) >= 4:
+                color = parts[1]
+                personality = parts[2]
+                timestamp = "_".join(parts[3:])
+                
+                # 获取文件信息
+                stat = file.stat()
+                
+                image_files.append({
+                    "filename": file.name,
+                    "url": f"http://localhost:8000/generated_images/{file.name}",
+                    "color": color,
+                    "personality": personality,
+                    "timestamp": timestamp,
+                    "created_at": stat.st_ctime,
+                    "size": stat.st_size
+                })
+        
+        # 按创建时间倒序排列（最新的在前）
+        image_files.sort(key=lambda x: x["created_at"], reverse=True)
+        
+        logger.info(f"Found {len(image_files)} historical character images")
+        
+        return {"images": image_files}
+        
+    except Exception as e:
+        logger.error(f"Error getting character history: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/character/select")
+async def select_character(
+    filename: str = Form(...)
+):
+    """Select a historical character image as current.
+    
+    Args:
+        filename: Filename of the character image to select
+    
+    Returns:
+        JSON with success status and image URL
+    """
+    try:
+        from app.user_config import UserConfig
+        from pathlib import Path
+        
+        config = get_config()
+        user_config = UserConfig(str(config.data_dir))
+        
+        # 验证文件存在
+        image_path = Path("generated_images") / filename
+        if not image_path.exists():
+            raise HTTPException(status_code=404, detail="图片文件不存在")
+        
+        # 解析文件名获取偏好设置
+        parts = filename.replace(".jpeg", "").split("_")
+        if len(parts) >= 4:
+            color = parts[1]
+            personality = parts[2]
+            
+            preferences = {
+                "color": color,
+                "personality": personality,
+                "appearance": "未知",
+                "role": "未知"
+            }
+        else:
+            preferences = {}
+        
+        # 更新用户配置
+        image_url = str(image_path)
+        user_config.save_character_image(
+            image_url=image_url,
+            prompt=f"历史形象: {filename}",
+            preferences=preferences
+        )
+        
+        logger.info(f"Selected historical character: {filename}")
+        
+        # 返回 HTTP URL
+        http_url = f"http://localhost:8000/generated_images/{filename}"
+        
+        return {
+            "success": True,
+            "image_url": http_url,
+            "filename": filename,
+            "preferences": preferences
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error selecting character: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/character/preferences")
+async def update_character_preferences(
+    color: Optional[str] = Form(None),
+    personality: Optional[str] = Form(None),
+    appearance: Optional[str] = Form(None),
+    role: Optional[str] = Form(None)
+):
+    """Update character preferences without generating new image.
+    
+    Args:
+        color: Color preference (optional)
+        personality: Personality trait (optional)
+        appearance: Appearance feature (optional)
+        role: Character role (optional)
+    
+    Returns:
+        JSON with updated preferences
+    """
+    try:
+        from app.user_config import UserConfig
+        
+        config = get_config()
+        user_config = UserConfig(str(config.data_dir))
+        
+        # 更新偏好设置
+        user_config.update_character_preferences(
+            color=color,
+            personality=personality,
+            appearance=appearance,
+            role=role
+        )
+        
+        # 返回更新后的配置
+        updated_config = user_config.load_config()
+        
+        return {
+            "success": True,
+            "preferences": updated_config['character']['preferences']
+        }
+    
+    except Exception as e:
+        logger.error(f"Failed to update preferences: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
         )
 
 

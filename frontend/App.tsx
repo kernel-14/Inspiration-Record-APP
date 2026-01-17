@@ -494,6 +494,9 @@ export default function App() {
         isOpen={showCustomizationDialog}
         onClose={() => setShowCustomizationDialog(false)}
         onGenerate={handleGenerateCharacter}
+        onSelectHistory={(imageUrl) => {
+          setCharacterImageUrl(imageUrl);
+        }}
         currentPreferences={characterPreferences}
         currentImageUrl={characterImageUrl}
       />

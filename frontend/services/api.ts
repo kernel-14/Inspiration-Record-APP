@@ -304,6 +304,54 @@ class APIService {
 
     return response.json();
   }
+
+  /**
+   * Get character history
+   */
+  async getCharacterHistory(): Promise<{
+    images: Array<{
+      filename: string;
+      url: string;
+      color: string;
+      personality: string;
+      timestamp: string;
+      created_at: number;
+      size: number;
+    }>;
+  }> {
+    const response = await fetch(`${this.baseUrl}/api/character/history`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch character history');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Select a historical character image
+   */
+  async selectCharacter(filename: string): Promise<{
+    success: boolean;
+    image_url: string;
+    filename: string;
+    preferences: any;
+  }> {
+    const formData = new FormData();
+    formData.append('filename', filename);
+
+    const response = await fetch(`${this.baseUrl}/api/character/select`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to select character');
+    }
+
+    return response.json();
+  }
 }
 
 export const apiService = new APIService();

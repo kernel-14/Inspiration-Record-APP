@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 from typing import Optional
 from pydantic import BaseModel, Field, field_validator
+from dotenv import load_dotenv
 
 
 class Config(BaseModel):
@@ -20,6 +21,16 @@ class Config(BaseModel):
     zhipu_api_key: str = Field(
         ...,
         description="Zhipu AI API key for ASR and GLM-4-Flash services"
+    )
+    
+    minimax_api_key: Optional[str] = Field(
+        default=None,
+        description="MiniMax API key for image generation (optional)"
+    )
+    
+    minimax_group_id: Optional[str] = Field(
+        default=None,
+        description="MiniMax Group ID (optional)"
     )
     
     # Data storage paths
@@ -98,6 +109,8 @@ def load_config() -> Config:
         
     Environment Variables:
         ZHIPU_API_KEY: Required. API key for Zhipu AI services
+        MINIMAX_API_KEY: Optional. API key for MiniMax image generation
+        MINIMAX_GROUP_ID: Optional. MiniMax Group ID
         DATA_DIR: Optional. Directory for data storage (default: data/)
         MAX_AUDIO_SIZE: Optional. Max audio file size in bytes (default: 10MB)
         LOG_LEVEL: Optional. Logging level (default: INFO)
@@ -105,9 +118,14 @@ def load_config() -> Config:
         HOST: Optional. Server host (default: 0.0.0.0)
         PORT: Optional. Server port (default: 8000)
     """
+    # Load environment variables from .env file
+    load_dotenv()
+    
     # Load from environment variables
     config_dict = {
         "zhipu_api_key": os.getenv("ZHIPU_API_KEY"),
+        "minimax_api_key": os.getenv("MINIMAX_API_KEY"),
+        "minimax_group_id": os.getenv("MINIMAX_GROUP_ID"),
         "data_dir": os.getenv("DATA_DIR", "data"),
         "max_audio_size": int(os.getenv("MAX_AUDIO_SIZE", str(10 * 1024 * 1024))),
         "log_level": os.getenv("LOG_LEVEL", "INFO"),
