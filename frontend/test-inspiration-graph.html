@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灵感知识图谱测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #faf5ff 0%, #fce7f3 50%, #ffffff 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #7c3aed;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(124, 58, 237, 0.1);
+        }
+
+        canvas {
+            width: 100%;
+            height: 600px;
+            border-radius: 16px;
+            background: white;
+            cursor: grab;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .legend {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .legend h3 {
+            font-size: 14px;
+            color: #334155;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .legend-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .legend-line {
+            width: 32px;
+            height: 2px;
+        }
+
+        .info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .detail-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            display: none;
+        }
+
+        .detail-panel.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .detail-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 12px;
+        }
+
+        .detail-content {
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .detail-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tag {
+            padding: 4px 12px;
+            background: #ede9fe;
+            color: #7c3aed;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌟 灵感知识图谱</h1>
+    <p class="subtitle">Inspiration Knowledge Graph</p>
+
+    <div class="container" style="position: relative;">
+        <canvas id="graph"></canvas>
+        
+        <div class="legend">
+            <h3>图例</h3>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #c084fc;"></div>
+                <span>灵感节点</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #cbd5e1;"></div>
+                <span>标签节点</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line" style="background: rgba(147, 51, 234, 0.2);"></div>
+                <span>关联关系</span>
+            </div>
+        </div>
+
+        <div class="info">
+            💡 悬停查看内容 · 点击查看详情 · 拖拽移动视图
+        </div>
+
+        <div class="detail-panel" id="detailPanel">
+            <div class="detail-title" id="detailTitle"></div>
+            <div class="detail-content" id="detailContent"></div>
+            <div class="detail-tags" id="detailTags"></div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟灵感数据
+        const inspirations = [
+            { id: '1', content: '如果云朵只是地球在做梦呢？', tags: ['随想', '自然'], createdAt: Date.now() },
+            { id: '2', content: '设计概念：一个不显示数字的时钟，只用颜色代表一天的能量。', tags: ['设计', '创意'], createdAt: Date.now() },
+            { id: '3', content: '旧书和咖啡的香气。', tags: ['生活'], createdAt: Date.now() },
+            { id: '4', content: '记得在接电话前深呼吸。', tags: ['提醒', '生活'], createdAt: Date.now() },
+            { id: '5', content: '今天的日落特别粉。', tags: ['自然', '生活'], createdAt: Date.now() },
+            { id: '6', content: '学会在困难中保持积极。', tags: ['成长', '学习'], createdAt: Date.now() },
+            { id: '7', content: '珍惜身边的朋友。', tags: ['友情', '生活'], createdAt: Date.now() },
+            { id: '8', content: '保持积极心态面对压力。', tags: ['成长', '工作'], createdAt: Date.now() },
+        ];
+
+        // 标签颜色 - 梦幻糖果色主题
+        const tagColors = {
+            '随想': '#E9D5FF',    // 淡紫罗兰
+            '自然': '#BBF7D0',    // 薄荷绿
+            '设计': '#FBCFE8',    // 樱花粉
+            '创意': '#FED7AA',    // 蜜桃橙
+            '生活': '#BFDBFE',    // 天空蓝
+            '提醒': '#FEF08A',    // 柠檬黄
+            '工作': '#DDD6FE',    // 薰衣草紫
+            '学习': '#E0E7FF',    // 雾霾蓝
+            '友情': '#FECDD3',    // 玫瑰粉
+            '成长': '#D9F99D',    // 青柠绿
+        };
+
+        // 初始化画布
+        const canvas = document.getElementById('graph');
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const width = canvas.width / dpr;
+        const height = canvas.height / dpr;
+
+        // 创建节点和连接
+        const nodes = [];
+        const links = [];
+
+        // 收集所有标签
+        const allTags = new Set();
+        inspirations.forEach(item => {
+            item.tags.forEach(tag => allTags.add(tag));
+        });
+
+        const tagArray = Array.from(allTags);
+
+        // 创建标签节点（内圈）
+        tagArray.forEach((tag, index) => {
+            const angle = (index / tagArray.length) * Math.PI * 2;
+            const radius = Math.min(width, height) * 0.15;
+            nodes.push({
+                id: `tag-${tag}`,
+                label: tag,
+                type: 'tag',
+                x: width / 2 + Math.cos(angle) * radius,
+                y: height / 2 + Math.sin(angle) * radius,
+                vx: 0,
+                vy: 0,
+                radius: 25, // 从 35 减小到 25
+                color: tagColors[tag] || '#E2E8F0',
+            });
+        });
+
+        // 创建灵感节点（外圈，更分散）
+        inspirations.forEach((item, index) => {
+            const angle = (index / inspirations.length) * Math.PI * 2 + Math.random() * 0.3;
+            const radius = Math.min(width, height) * 0.35 + Math.random() * 50;
+            nodes.push({
+                id: item.id,
+                label: item.content.substring(0, 8) + '...',
+                type: 'inspiration',
+                x: width / 2 + Math.cos(angle) * radius,
+                y: height / 2 + Math.sin(angle) * radius,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                radius: 18, // 从 25 减小到 18
+                color: '#C084FC', // 梦幻紫色
+                data: item,
+            });
+
+            // 连接到标签
+            item.tags.forEach(tag => {
+                links.push({
+                    source: item.id,
+                    target: `tag-${tag}`,
+                    strength: 0.8,
+                });
+            });
+        });
+
+        // 计算相似度并创建连接
+        for (let i = 0; i < inspirations.length; i++) {
+            for (let j = i + 1; j < inspirations.length; j++) {
+                const tags1 = new Set(inspirations[i].tags);
+                const tags2 = new Set(inspirations[j].tags);
+                const intersection = new Set([...tags1].filter(x => tags2.has(x)));
+                const union = new Set([...tags1, ...tags2]);
+                const similarity = union.size > 0 ? intersection.size / union.size : 0;
+                
+                if (similarity > 0.4) {
+                    links.push({
+                        source: inspirations[i].id,
+                        target: inspirations[j].id,
+                        strength: similarity * 0.5,
+                    });
+                }
+            }
+        }
+
+        let selectedNode = null;
+        let hoveredNode = null;
+
+        // 力导向模拟
+        function simulate() {
+            ctx.clearRect(0, 0, width, height);
+
+            const alpha = 0.2;
+            const centerForce = 0.005;
+            const repelForce = 2000;
+            const linkForce = 0.05;
+
+            // 中心引力（仅标签）
+            nodes.forEach(node => {
+                if (node.type === 'tag') {
+                    const dx = width / 2 - node.x;
+                    const dy = height / 2 - node.y;
+                    node.vx += dx * centerForce;
+                    node.vy += dy * centerForce;
+                }
+            });
+
+            // 节点斥力（强力防重叠）
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const dx = nodes[j].x - nodes[i].x;
+                    const dy = nodes[j].y - nodes[i].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const minDistance = nodes[i].radius + nodes[j].radius + 40;
+                    
+                    if (distance < minDistance) {
+                        const force = repelForce / (distance * distance) * 2;
+                        const fx = (dx / distance) * force;
+                        const fy = (dy / distance) * force;
+                        nodes[i].vx -= fx;
+                        nodes[i].vy -= fy;
+                        nodes[j].vx += fx;
+                        nodes[j].vy += fy;
+                    } else {
+                        const force = repelForce / (distance * distance);
+                        const fx = (dx / distance) * force;
+                        const fy = (dy / distance) * force;
+                        nodes[i].vx -= fx;
+                        nodes[i].vy -= fy;
+                        nodes[j].vx += fx;
+                        nodes[j].vy += fy;
+                    }
+                }
+            }
+
+            // 连接引力
+            links.forEach(link => {
+                const source = nodes.find(n => n.id === link.source);
+                const target = nodes.find(n => n.id === link.target);
+                if (source && target) {
+                    const dx = target.x - source.x;
+                    const dy = target.y - source.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const idealDistance = 150;
+                    const force = (distance - idealDistance) * linkForce * link.strength;
+                    const fx = (dx / distance) * force;
+                    const fy = (dy / distance) * force;
+                    source.vx += fx;
+                    source.vy += fy;
+                    target.vx -= fx;
+                    target.vy -= fy;
+                }
+            });
+
+            // 更新位置
+            nodes.forEach(node => {
+                node.x += node.vx * alpha;
+                node.y += node.vy * alpha;
+                node.vx *= 0.85;
+                node.vy *= 0.85;
+
+                const margin = node.radius + 20;
+                node.x = Math.max(margin, Math.min(width - margin, node.x));
+                node.y = Math.max(margin, Math.min(height - margin, node.y));
+            });
+
+            // 绘制连接
+            links.forEach(link => {
+                const source = nodes.find(n => n.id === link.source);
+                const target = nodes.find(n => n.id === link.target);
+                if (source && target) {
+                    ctx.beginPath();
+                    ctx.moveTo(source.x, source.y);
+                    ctx.lineTo(target.x, target.y);
+                    
+                    if (source.type === 'inspiration' && target.type === 'inspiration') {
+                        ctx.setLineDash([5, 5]);
+                        ctx.strokeStyle = 'rgba(219, 39, 119, 0.15)'; // 粉色虚线
+                        ctx.lineWidth = 1;
+                    } else {
+                        ctx.setLineDash([]);
+                        ctx.strokeStyle = 'rgba(192, 132, 252, 0.25)'; // 紫色实线
+                        ctx.lineWidth = 1.5;
+                    }
+                    
+                    ctx.globalAlpha = link.strength * 0.4;
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                    ctx.setLineDash([]);
+                }
+            });
+
+            // 绘制节点
+            nodes.forEach(node => {
+                const isSelected = selectedNode === node.id;
+                const isHovered = hoveredNode === node.id;
+
+                if (isSelected || isHovered) {
+                    ctx.save();
+                    ctx.shadowColor = node.type === 'tag' ? 'rgba(100, 116, 139, 0.4)' : 'rgba(167, 139, 250, 0.6)';
+                    ctx.shadowBlur = 25;
+                    ctx.fillStyle = node.color;
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, node.radius + 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // 渐变效果
+                const gradient = ctx.createRadialGradient(
+                    node.x - node.radius * 0.3,
+                    node.y - node.radius * 0.3,
+                    0,
+                    node.x,
+                    node.y,
+                    node.radius
+                );
+                
+                if (node.type === 'tag') {
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                    gradient.addColorStop(1, node.color);
+                } else {
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+                    gradient.addColorStop(1, node.color);
+                }
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = isSelected ? '#7C3AED' : isHovered ? '#A78BFA' : 'rgba(255, 255, 255, 0.9)';
+                ctx.lineWidth = isSelected ? 3 : isHovered ? 2.5 : 2;
+                ctx.stroke();
+
+                // 文字（仅在悬停或选中时显示完整内容）
+                if (isHovered || isSelected) {
+                    const fullLabel = node.type === 'tag' ? node.label : (node.data?.content.substring(0, 20) + '...' || node.label);
+                    
+                    ctx.save();
+                    ctx.font = `${node.type === 'tag' ? 'bold 12' : '11'}px sans-serif`;
+                    const textWidth = ctx.measureText(fullLabel).width;
+                    const padding = 8;
+                    const bgWidth = textWidth + padding * 2;
+                    const bgHeight = 24;
+                    const bgX = node.x - bgWidth / 2;
+                    const bgY = node.y + node.radius + 10;
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.roundRect(bgX, bgY, bgWidth, bgHeight, 12);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    
+                    ctx.fillStyle = node.type === 'tag' ? '#1e293b' : '#7c3aed';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(fullLabel, node.x, bgY + bgHeight / 2);
+                    ctx.restore();
+                } else {
+                    if (node.type === 'tag') {
+                        ctx.fillStyle = '#1e293b';
+                        ctx.font = 'bold 11px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                        ctx.shadowBlur = 3;
+                        ctx.fillText(node.label, node.x, node.y);
+                        ctx.shadowBlur = 0;
+                    }
+                }
+            });
+
+            requestAnimationFrame(simulate);
+        }
+
+        simulate();
+
+        // 点击事件
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left);
+            const y = (e.clientY - rect.top);
+
+            const clickedNode = nodes.find(node => {
+                const dx = x - node.x;
+                const dy = y - node.y;
+                return Math.sqrt(dx * dx + dy * dy) <= node.radius;
+            });
+
+            if (clickedNode) {
+                selectedNode = clickedNode.id;
+                
+                const panel = document.getElementById('detailPanel');
+                const title = document.getElementById('detailTitle');
+                const content = document.getElementById('detailContent');
+                const tags = document.getElementById('detailTags');
+
+                if (clickedNode.type === 'inspiration' && clickedNode.data) {
+                    title.textContent = '灵感详情';
+                    content.textContent = clickedNode.data.content;
+                    tags.innerHTML = clickedNode.data.tags.map(tag => 
+                        `<span class="tag">${tag}</span>`
+                    ).join('');
+                    panel.classList.add('show');
+                } else if (clickedNode.type === 'tag') {
+                    title.textContent = `标签: ${clickedNode.label}`;
+                    const relatedInspirations = inspirations.filter(item => 
+                        item.tags.includes(clickedNode.label)
+                    );
+                    content.textContent = `包含 ${relatedInspirations.length} 条相关灵感`;
+                    tags.innerHTML = '';
+                    panel.classList.add('show');
+                }
+            } else {
+                selectedNode = null;
+                document.getElementById('detailPanel').classList.remove('show');
+            }
+        });
+
+        // 鼠标悬停
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left);
+            const y = (e.clientY - rect.top);
+
+            const hoveredNodeFound = nodes.find(node => {
+                const dx = x - node.x;
+                const dy = y - node.y;
+                return Math.sqrt(dx * dx + dy * dy) <= node.radius;
+            });
+
+            hoveredNode = hoveredNodeFound ? hoveredNodeFound.id : null;
+            canvas.style.cursor = hoveredNodeFound ? 'pointer' : 'grab';
+        });
+    </script>
+</body>
+</html>

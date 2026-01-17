@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Sparkles, Tag, X } from 'lucide-react';
 import { InspirationItem } from '../types';
 import { InspirationCard } from './InspirationCard';
 import { PageHeader } from './PageHeader';
@@ -14,6 +14,20 @@ interface InspirationViewProps {
   onSendMessage: (message: string) => Promise<string>;
 }
 
+// 标签颜色映射
+const TAG_COLORS: Record<string, string> = {
+  '随想': 'bg-purple-100 text-purple-700 border-purple-200',
+  '自然': 'bg-green-100 text-green-700 border-green-200',
+  '设计': 'bg-pink-100 text-pink-700 border-pink-200',
+  '创意': 'bg-orange-100 text-orange-700 border-orange-200',
+  '生活': 'bg-blue-100 text-blue-700 border-blue-200',
+  '提醒': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  '工作': 'bg-indigo-100 text-indigo-700 border-indigo-200',
+  '学习': 'bg-cyan-100 text-cyan-700 border-cyan-200',
+  '友情': 'bg-rose-100 text-rose-700 border-rose-200',
+  '成长': 'bg-lime-100 text-lime-700 border-lime-200',
+};
+
 export const InspirationView: React.FC<InspirationViewProps> = ({ 
   items, 
   onClose, 
@@ -23,11 +37,47 @@ export const InspirationView: React.FC<InspirationViewProps> = ({
 }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const handleAddInspiration = async (content: string, isVoice: boolean) => {
     if (onAdd) {
       await onAdd(content, isVoice);
     }
+  };
+
+  // 获取所有标签及其计数
+  const tagStats = useMemo(() => {
+    const stats = new Map<string, number>();
+    items.forEach(item => {
+      item.tags.forEach(tag => {
+        stats.set(tag, (stats.get(tag) || 0) + 1);
+      });
+    });
+    return Array.from(stats.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [items]);
+
+  // 筛选后的灵感
+  const filteredItems = useMemo(() => {
+    if (selectedTags.length === 0) return items;
+    return items.filter(item => 
+      selectedTags.some(tag => item.tags.includes(tag))
+    );
+  }, [items, selectedTags]);
+
+  // 切换标签选择
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  // 清除所有筛选
+  const clearFilters = () => {
+    setSelectedTags([]);
   };
 
   return (
@@ -44,21 +94,101 @@ export const InspirationView: React.FC<InspirationViewProps> = ({
         characterImageUrl={characterImageUrl}
       />
 
-      {/* Scrollable List */}
+      {/* 标签筛选区域 - Notion 风格 */}
+      <div className="relative z-10 px-6 mb-4">
+        <div className="w-full max-w-md mx-auto">
+          {/* 标签筛选标题 */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <Tag size={16} />
+              <span className="font-medium">按标签筛选</span>
+              {selectedTags.length > 0 && (
+                <span className="text-xs text-slate-400">
+                  ({selectedTags.length} 个已选)
+                </span>
+              )}
+            </div>
+            {selectedTags.length > 0 && (
+              <button
+                onClick={clearFilters}
+                className="text-xs text-purple-600 hover:text-purple-700 font-medium transition-colors"
+              >
+                清除筛选
+              </button>
+            )}
+          </div>
+
+          {/* 标签列表 */}
+          <div className="flex flex-wrap gap-2">
+            {tagStats.map(({ tag, count }) => {
+              const isSelected = selectedTags.includes(tag);
+              
+              return (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={`
+                    group relative px-3 py-1.5 rounded-lg text-xs font-medium
+                    border transition-all duration-200
+                    ${isSelected 
+                      ? 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm scale-105' 
+                      : 'bg-white/60 text-slate-600 border-slate-200 hover:bg-white/80'
+                    }
+                  `}
+                >
+                  <span className="flex items-center gap-1.5">
+                    {tag}
+                    <span className={`
+                      text-[10px] px-1.5 py-0.5 rounded-full
+                      ${isSelected 
+                        ? 'bg-purple-200/60 text-purple-700' 
+                        : 'bg-slate-100'
+                      }
+                    `}>
+                      {count}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 筛选结果统计 */}
+          <div className="mt-3 text-xs text-slate-500">
+            显示 {filteredItems.length} / {items.length} 条灵感
+          </div>
+        </div>
+      </div>
+
+      {/* 灵感列表 */}
       <div className="relative z-10 flex-1 overflow-y-auto no-scrollbar scroll-smooth px-6 pt-2 pb-32">
         <div className="w-full max-w-md mx-auto flex flex-col gap-2">
-           {items.map((item, index) => (
-             <InspirationCard key={item.id} item={item} index={index} />
-           ))}
+          {filteredItems.length > 0 ? (
+            filteredItems.map((item, index) => (
+              <InspirationCard key={item.id} item={item} index={index} />
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[50vh] text-center opacity-40">
+              {selectedTags.length > 0 ? (
+                <>
+                  <Tag size={32} className="text-purple-300 mb-4" strokeWidth={1} />
+                  <p className="text-slate-400 font-light tracking-wide">没有匹配的灵感</p>
+                  <button
+                    onClick={clearFilters}
+                    className="mt-4 text-sm text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    清除筛选条件
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Sparkles size={32} className="text-purple-300 mb-4 animate-pulse" strokeWidth={1} />
+                  <p className="text-slate-400 font-light tracking-wide">等待灵感的火花...</p>
+                </>
+              )}
+            </div>
+          )}
         </div>
-        
-        {/* Empty state gentle prompt if no items */}
-        {items.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-[60vh] text-center opacity-40">
-            <Sparkles size={32} className="text-purple-300 mb-4 animate-pulse" strokeWidth={1} />
-            <p className="text-slate-400 font-light tracking-wide">Waiting for a spark...</p>
-          </div>
-        )}
       </div>
 
       {/* Floating Action Button */}
