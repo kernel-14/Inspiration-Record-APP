@@ -52,6 +52,7 @@ export const MoodView: React.FC<MoodViewProps> = ({
             intensity: mood.intensity,
             timestamp: mood.timestamp,
             keywords: mood.keywords || [],
+            originalText: mood.original_text || '',  // 添加原文
           }));
         
         console.log('✨ 最终显示的心情数据:', recentMoods);
@@ -67,6 +68,7 @@ export const MoodView: React.FC<MoodViewProps> = ({
           intensity: item.intensity * 10,
           timestamp: new Date(item.date).toISOString(),
           keywords: [],
+          originalText: '',  // 后备数据没有原文
         }));
         console.log('🔄 转换后的后备数据:', fallbackMoods);
         setMoodsData(fallbackMoods);
@@ -220,7 +222,19 @@ export const MoodView: React.FC<MoodViewProps> = ({
                 </div>
               </div>
 
-              {/* 关键词 */}
+              {/* 原文内容 */}
+              {selectedMood.originalText && (
+                <div className="space-y-2">
+                  <p className="text-sm text-slate-600 font-medium">记录原文</p>
+                  <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/50">
+                    <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                      {selectedMood.originalText}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 关键词（如果有的话，作为补充） */}
               {selectedMood.keywords && selectedMood.keywords.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm text-slate-600 font-medium">关键词</p>

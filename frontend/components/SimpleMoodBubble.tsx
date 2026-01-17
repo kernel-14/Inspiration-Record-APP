@@ -7,6 +7,7 @@ export interface MoodData {
   intensity: number;
   timestamp: string;
   keywords: string[];
+  originalText?: string;  // 添加原文字段
 }
 
 interface SimpleMoodBubbleProps {

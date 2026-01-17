@@ -472,20 +472,25 @@ async def get_moods():
                     "timestamp": record["timestamp"],
                     "type": mood_data.get("type"),
                     "intensity": mood_data.get("intensity", 5),
-                    "keywords": mood_data.get("keywords", [])
+                    "keywords": mood_data.get("keywords", []),
+                    "original_text": record.get("original_text", "")  # 添加原文
                 }
                 moods_from_records.append(mood_obj)
         
         logger.info(f"Extracted {len(moods_from_records)} moods from records.json")
         
         # 3. 合并两个来源的心情数据（去重，优先使用 records 中的数据）
+        # 同时需要补充 moods.json 中缺失的 original_text
         mood_dict = {}
         
         # 先添加 moods.json 中的数据
         for mood in moods_from_file:
             mood_dict[mood["record_id"]] = mood
+            # 如果没有 original_text，设置为空字符串
+            if "original_text" not in mood:
+                mood["original_text"] = ""
         
-        # 再添加/覆盖 records.json 中的数据
+        # 再添加/覆盖 records.json 中的数据（包含 original_text）
         for mood in moods_from_records:
             mood_dict[mood["record_id"]] = mood
         
