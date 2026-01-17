@@ -1,4 +1,16 @@
-# 治愈系记录助手 - SoulMate AI Companion
+---
+title: Nora
+emoji: 🐱
+colorFrom: pink
+colorTo: purple
+sdk: streamlit
+sdk_version: 1.31.0
+app_file: app.py
+pinned: false
+---
+
+
+# Nora治愈系记录助手 - SoulMate AI Companion
 
 一个温暖、治愈的 AI 陪伴应用，帮助你记录心情、捕捉灵感、管理待办，并随时与 AI 助手对话。
 
