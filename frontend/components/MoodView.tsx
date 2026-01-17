@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Plus } from 'lucide-react';
 import { MoodItem } from '../types';
 import { SimpleMoodBubble, MoodData } from './SimpleMoodBubble';
 import { PageHeader } from './PageHeader';
@@ -139,27 +138,15 @@ export const MoodView: React.FC<MoodViewProps> = ({
               />
             </div>
           )}
-
-          {/* 使用说明 */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center">
-            <p className="text-xs text-slate-400 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full">
-              💡 左键查看详情 · 右键取消 · 拖动互动
-            </p>
-          </div>
         </div>
 
-        {/* Bottom Floating Action Button */}
+        {/* 使用说明 - 移到原来加号的位置 */}
         <div className="mb-32 opacity-0 animate-[fadeSlideUp_1s_ease-out_forwards] delay-500">
-           <button 
-             className="
-               group relative flex items-center justify-center w-16 h-16
-               bg-white/40 backdrop-blur-xl rounded-full 
-               border border-white/50 shadow-lg shadow-purple-100/50
-               hover:bg-white/60 hover:scale-105 transition-all duration-700 ease-out
-             "
-           >
-             <Plus size={24} className="text-slate-400 group-hover:text-purple-400 transition-colors duration-500" strokeWidth={1.5} />
-           </button>
+          <div className="text-center">
+            <p className="text-xs text-slate-400 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full whitespace-nowrap">
+              左键查看详情 · 右键取消 · 拖动互动
+            </p>
+          </div>
         </div>
 
       </div>
