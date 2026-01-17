@@ -16,16 +16,43 @@ interface SimpleMoodBubbleProps {
 }
 
 const COLORS: Record<string, string> = {
-  '喜悦': '#FED7AA',
-  '开心': '#FECACA',
-  '兴奋': '#FEF08A',
-  '平静': '#BFDBFE',
-  '放松': '#D9F99D',
-  '焦虑': '#DDD6FE',
-  '紧张': '#E9D5FF',
-  '悲伤': '#CBD5E1',
-  '疲惫': '#E0E7FF',
-  '困倦': '#F3E8FF',
+  // 积极情绪 - 暖色系
+  '喜悦': '#FED7AA',      // 蜜桃橙
+  '开心': '#FECACA',      // 珊瑚粉
+  '兴奋': '#FEF08A',      // 柠檬黄
+  '快乐': '#FDE68A',      // 金黄
+  '愉悦': '#FCA5A5',      // 玫瑰粉
+  '欣喜': '#FDBA74',      // 橘黄
+  '惊喜': '#FCD34D',      // 明黄
+  '满足': '#FBB6CE',      // 樱花粉
+  '成就': '#F9A8D4',      // 粉紫
+  '希望': '#FDE047',      // 亮黄
+  
+  // 平和情绪 - 冷色系
+  '平静': '#BFDBFE',      // 天空蓝
+  '放松': '#D9F99D',      // 青柠绿
+  '宁静': '#A5F3FC',      // 青蓝
+  '清新': '#99F6E4',      // 薄荷绿
+  '温柔': '#E9D5FF',      // 淡紫
+  '温暖': '#FBCFE8',      // 粉紫
+  '充实': '#C7D2FE',      // 靛蓝
+  '积极': '#BAE6FD',      // 浅蓝
+  '憧憬': '#DDD6FE',      // 薰衣草
+  
+  // 消极情绪 - 灰色系
+  '焦虑': '#DDD6FE',      // 薰衣草紫
+  '紧张': '#E9D5FF',      // 淡紫
+  '悲伤': '#CBD5E1',      // 灰蓝
+  '疲惫': '#E0E7FF',      // 雾蓝
+  '困倦': '#F3E8FF',      // 浅紫
+  '沮丧': '#D1D5DB',      // 浅灰
+  '孤独': '#E5E7EB',      // 银灰
+  '烦躁': '#FEE2E2',      // 浅红
+  
+  // 复杂情绪 - 混合色
+  '感动': '#F9A8D4',      // 粉紫
+  '思念': '#C4B5FD',      // 紫罗兰
+  '感慨': '#D8B4FE',      // 淡紫
 };
 
 export const SimpleMoodBubble: React.FC<SimpleMoodBubbleProps> = ({ moods, onMoodClick }) => {
