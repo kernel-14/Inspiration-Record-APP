@@ -3,20 +3,35 @@
  */
 
 // 自动检测 API 地址
-// 如果通过局域网 IP 访问前端，自动使用相同的 IP 访问后端
+// 支持本地开发、局域网访问和生产环境（Hugging Face/ModelScope）
 const getApiBaseUrl = () => {
   // 优先使用环境变量
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
   
-  // 自动检测：如果前端不是通过 localhost 访问，使用相同的 host
   const currentHost = window.location.hostname;
-  if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-    return `http://${currentHost}:8000`;
+  const currentProtocol = window.location.protocol;
+  const currentPort = window.location.port;
+  
+  // 生产环境检测（Hugging Face, ModelScope 等）
+  // 这些平台通常使用 HTTPS 且前后端在同一域名
+  if (currentHost.includes('hf.space') || 
+      currentHost.includes('huggingface.co') || 
+      currentHost.includes('modelscope.cn') ||
+      currentHost.includes('gradio.live')) {
+    // 使用相同的协议和域名，不指定端口
+    return `${currentProtocol}//${currentHost}`;
   }
   
-  // 默认使用 localhost
+  // 局域网访问检测（如 192.168.x.x, 172.x.x.x）
+  if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+    // 如果前端有端口，后端使用 8000；否则使用相同端口
+    const backendPort = currentPort ? '8000' : '';
+    return `${currentProtocol}//${currentHost}${backendPort ? ':' + backendPort : ''}`;
+  }
+  
+  // 本地开发环境
   return 'http://localhost:8000';
 };
 
