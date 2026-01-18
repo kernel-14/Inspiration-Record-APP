@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 3px;
+            white-space: pre-wrap;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🧪 API 测试工具</h1>
+    
+    <div class="test-section">
+        <h3>1. 健康检查</h3>
+        <button onclick="testHealth()">测试 /health</button>
+        <div id="health-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. API 状态</h3>
+        <button onclick="testStatus()">测试 /api/status</button>
+        <div id="status-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 获取心情数据</h3>
+        <button onclick="testMoods()">测试 /api/moods</button>
+        <div id="moods-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. 获取灵感数据</h3>
+        <button onclick="testInspirations()">测试 /api/inspirations</button>
+        <div id="inspirations-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>5. 获取待办数据</h3>
+        <button onclick="testTodos()">测试 /api/todos</button>
+        <div id="todos-result" class="result"></div>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+        
+        async function testEndpoint(endpoint, resultId) {
+            const resultDiv = document.getElementById(resultId);
+            resultDiv.innerHTML = '测试中...';
+            
+            try {
+                const response = await fetch(`${baseUrl}${endpoint}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<span class="success">✅ 成功 (${response.status})</span>\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ 失败 (${response.status})</span>\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ 错误</span>\n${error.message}`;
+            }
+        }
+        
+        function testHealth() {
+            testEndpoint('/health', 'health-result');
+        }
+        
+        function testStatus() {
+            testEndpoint('/api/status', 'status-result');
+        }
+        
+        function testMoods() {
+            testEndpoint('/api/moods', 'moods-result');
+        }
+        
+        function testInspirations() {
+            testEndpoint('/api/inspirations', 'inspirations-result');
+        }
+        
+        function testTodos() {
+            testEndpoint('/api/todos', 'todos-result');
+        }
+    </script>
+</body>
+</html>
