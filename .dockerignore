@@ -1,0 +1,75 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Testing
+.pytest_cache
+.hypothesis
+.coverage
+htmlcov/
+*.log
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Documentation (keep only essential)
+docs/
+PRD.md
+PROJECT_STRUCTURE.md
+局域网访问修复完成.md
+
+# Deployment files (not needed in container)
+deployment/
+scripts/start_local.py
+scripts/start_local.bat
+scripts/test_lan_access.bat
+scripts/build_and_deploy.sh
+scripts/build_and_deploy.bat
+
+# Frontend source (only need dist)
+frontend/node_modules
+frontend/src
+frontend/components
+frontend/services
+frontend/utils
+frontend/.env.local
+frontend/package.json
+frontend/package-lock.json
+frontend/tsconfig.json
+frontend/vite.config.ts
+frontend/index.tsx
+frontend/index.css
+frontend/types.ts
+frontend/App.tsx
+frontend/test-*.html
+
+# Tests
+tests/
+
+# Logs
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp

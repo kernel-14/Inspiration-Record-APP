@@ -1,3 +1,13 @@
+---
+title: Nora - 治愈系记录助手
+emoji: 🌟
+colorFrom: purple
+colorTo: pink
+sdk: docker
+pinned: false
+license: mit
+---
+
 # 🌟 治愈系记录助手 - SoulMate AI Companion
 
 一个温暖、治愈的 AI 陪伴应用，帮助你记录心情、捕捉灵感、管理待办。
@@ -16,9 +26,9 @@
 
 直接访问本 Space 即可使用完整功能！
 
-### 配置 API 密钥
+### ⚙️ 配置 API 密钥
 
-在 Space 的 **Settings → Repository secrets** 中配置：
+在 Space 的 **Settings → Variables and secrets** 中配置：
 
 **必需：**
 - `ZHIPU_API_KEY` - 智谱 AI API 密钥
@@ -30,6 +40,8 @@
 - `MINIMAX_GROUP_ID` - MiniMax Group ID
   - 获取地址：https://platform.minimaxi.com/
   - 用途：AI 形象生成
+
+配置后，点击 **Factory reboot** 重启 Space 使配置生效。
 
 ## 📖 使用说明
 
@@ -72,7 +84,7 @@
 ## 🔗 相关链接
 
 - [GitHub 仓库](https://github.com/kernel-14/Nora)
-- [详细文档](https://github.com/kernel-14/Nora/blob/main/README.md)
+- [完整文档](https://github.com/kernel-14/Nora/blob/main/README.md)
 - [智谱 AI](https://open.bigmodel.cn/)
 - [MiniMax](https://platform.minimaxi.com/)
 
@@ -84,78 +96,35 @@
 - **AI 服务**: 智谱 AI (GLM-4) + MiniMax
 - **部署**: Hugging Face Spaces (Docker)
 
-## 🔧 本地开发
-
-### 启动后端服务
-
-```bash
-# 安装依赖
-pip install -r requirements.txt
-
-# 配置环境变量（复制 .env.example 为 .env 并填写）
-cp .env.example .env
-
-# 启动服务（端口 8000）
-python scripts/start_local.py
-```
-
-### 构建前端
-
-```bash
-cd frontend
-npm install
-npm run build
-```
-
-### 局域网访问
-
-1. 启动后端后，会显示局域网访问地址（如 `http://192.168.1.100:8000/`）
-2. 其他设备连接同一 WiFi 后，使用该地址访问
-3. 如果无法访问，请参考 [局域网访问快速修复指南](docs/局域网访问快速修复.md)
-
-**快速诊断**：
-```bash
-# Windows
-scripts\test_lan_access.bat
-
-# 或访问诊断页面
-http://你的IP:8000/test-connection.html
-```
-
 ## 🐛 故障排查
-
-### 问题：其他设备访问显示 "Load failed"
-
-**原因**：防火墙阻止、网络隔离或 API 地址配置错误
-
-**解决方案**：
-1. 运行诊断工具：`scripts\test_lan_access.bat`
-2. 访问诊断页面：`http://你的IP:8000/test-connection.html`
-3. 查看详细指南：[局域网访问快速修复](docs/局域网访问快速修复.md)
 
 ### 问题：语音识别失败
 
 **原因**：未配置 ZHIPU_API_KEY 或 API 配额不足
 
 **解决方案**：
-1. 检查 `.env` 文件中的 `ZHIPU_API_KEY`
+1. 在 Space Settings 中配置 `ZHIPU_API_KEY`
 2. 访问 https://open.bigmodel.cn/ 检查配额
+3. Factory reboot 重启 Space
 
 ### 问题：AI 形象生成失败
 
 **原因**：未配置 MINIMAX_API_KEY 或 API 配额不足
 
 **解决方案**：
-1. 检查 `.env` 文件中的 `MINIMAX_API_KEY` 和 `MINIMAX_GROUP_ID`
+1. 在 Space Settings 中配置 `MINIMAX_API_KEY` 和 `MINIMAX_GROUP_ID`
 2. 访问 https://platform.minimaxi.com/ 检查配额
+3. Factory reboot 重启 Space
 
-## 📚 文档
+### 问题：Space 构建失败
 
-- [功能架构图](docs/功能架构图.md)
-- [API 配置说明](docs/API_配置说明.md)
-- [局域网访问指南](docs/局域网访问指南.md)
-- [局域网访问快速修复](docs/局域网访问快速修复.md)
-- [心情气泡池功能说明](docs/心情气泡池功能说明.md)
+**原因**：缺少必要的文件或配置
+
+**检查清单**：
+- ✅ 根目录有 `Dockerfile`
+- ✅ 根目录有 `start.py`
+- ✅ 根目录有 `requirements.txt`
+- ✅ `frontend/dist/` 目录存在且包含构建文件
 
 ## 📄 License
 
