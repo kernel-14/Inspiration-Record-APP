@@ -48,8 +48,8 @@ class UserConfig:
             "user_id": "default_user",
             "created_at": datetime.utcnow().isoformat() + "Z",
             "character": {
-                "image_url": "generated_images/character_薰衣草紫_温柔_20260117_183825.jpeg",
-                "prompt": "一只薰衣草紫色的温柔猫咪，治愈系风格",
+                "image_url": "generated_images/default_character.jpeg",
+                "prompt": "默认治愈系小猫形象",
                 "revised_prompt": "一只薰衣草紫色的温柔猫咪，治愈系风格，温暖的陪伴者",
                 "preferences": {
                     "color": "薰衣草紫",
@@ -58,7 +58,7 @@ class UserConfig:
                     "role": "陪伴式朋友"
                 },
                 "generated_at": datetime.utcnow().isoformat() + "Z",
-                "generation_count": 1
+                "generation_count": 0
             },
             "settings": {
                 "theme": "light",
