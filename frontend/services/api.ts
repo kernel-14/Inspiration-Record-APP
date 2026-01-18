@@ -139,27 +139,42 @@ class APIService {
    * Process audio or text input
    */
   async processInput(audio?: File, text?: string): Promise<ProcessResponse> {
-    const formData = new FormData();
-    
-    if (audio) {
-      formData.append('audio', audio);
-    } else if (text) {
-      formData.append('text', text);
-    } else {
-      throw new Error('Either audio or text must be provided');
+    try {
+      console.log('📤 Processing input:', audio ? 'audio' : 'text');
+      
+      const formData = new FormData();
+      
+      if (audio) {
+        formData.append('audio', audio);
+      } else if (text) {
+        formData.append('text', text);
+      } else {
+        throw new Error('Either audio or text must be provided');
+      }
+
+      const response = await fetch(`${this.baseUrl}/api/process`, {
+        method: 'POST',
+        body: formData,
+        mode: 'cors',
+        credentials: 'omit',
+        signal: AbortSignal.timeout(60000), // 60秒超时
+      });
+
+      console.log('📡 Process response status:', response.status);
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('❌ Process error:', error);
+        throw new Error(error.error || 'Failed to process input');
+      }
+
+      const result = await response.json();
+      console.log('✅ Process result:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Process input error:', error);
+      throw error;
     }
-
-    const response = await fetch(`${this.baseUrl}/api/process`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to process input');
-    }
-
-    return response.json();
   }
 
   /**
@@ -250,20 +265,45 @@ class APIService {
    * Chat with AI assistant
    */
   async chatWithAI(message: string): Promise<string> {
-    const formData = new FormData();
-    formData.append('text', message);
+    try {
+      console.log('🤖 Sending chat request to:', `${this.baseUrl}/api/chat`);
+      console.log('📝 Message:', message);
+      
+      const formData = new FormData();
+      formData.append('text', message);
 
-    const response = await fetch(`${this.baseUrl}/api/chat`, {
-      method: 'POST',
-      body: formData,
-    });
+      const response = await fetch(`${this.baseUrl}/api/chat`, {
+        method: 'POST',
+        body: formData,
+        mode: 'cors', // 明确指定 CORS 模式
+        credentials: 'omit', // 不发送 cookies
+        // 添加超时和错误处理
+        signal: AbortSignal.timeout(60000), // 60秒超时
+      });
 
-    if (!response.ok) {
-      throw new Error('Failed to chat with AI');
+      console.log('📡 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Chat API error:', response.status, errorText);
+        throw new Error(`Chat API failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Chat response received:', data);
+      return data.response || '抱歉，我现在有点累了，稍后再聊好吗？';
+    } catch (error) {
+      console.error('❌ Chat error:', error);
+      if (error instanceof Error) {
+        if (error.name === 'AbortError' || error.message.includes('timeout')) {
+          return '抱歉，网络有点慢，请稍后再试~';
+        }
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          return '抱歉，无法连接到服务器，请检查网络连接~';
+        }
+      }
+      return '抱歉，出现了一些问题，请稍后再试~';
     }
-
-    const data = await response.json();
-    return data.response || '抱歉，我现在有点累了，稍后再聊好吗？';
   }
 
   /**

@@ -642,7 +642,8 @@ async def chat_with_ai(text: str = Form(...)):
         try:
             import httpx
             
-            async with httpx.AsyncClient() as client:
+            # 增加超时时间，添加重试逻辑
+            async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
                     "https://open.bigmodel.cn/api/paas/v4/chat/completions",
                     headers={
@@ -663,8 +664,7 @@ async def chat_with_ai(text: str = Form(...)):
                         ],
                         "temperature": 0.8,
                         "top_p": 0.9
-                    },
-                    timeout=30.0
+                    }
                 )
                 
                 if response.status_code == 200:
@@ -676,6 +676,12 @@ async def chat_with_ai(text: str = Form(...)):
                     logger.error(f"AI chat failed: {response.status_code} {response.text}")
                     return {"response": "抱歉，我现在有点累了，稍后再聊好吗？"}
         
+        except httpx.TimeoutException:
+            logger.error(f"AI API timeout")
+            return {"response": "抱歉，网络有点慢，请稍后再试~"}
+        except httpx.ConnectError:
+            logger.error(f"AI API connection error")
+            return {"response": "抱歉，无法连接到AI服务，请检查网络连接~"}
         except Exception as e:
             logger.error(f"AI API call error: {e}")
             return {"response": "抱歉，我现在有点累了，稍后再聊好吗？"}

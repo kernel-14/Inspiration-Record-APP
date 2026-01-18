@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网络连接测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .success { background: #4CAF50; color: white; }
+        .error { background: #f44336; color: white; }
+        .pending { background: #FFC107; color: black; }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0b7dda;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 局域网访问诊断工具</h1>
+    
+    <div class="info">
+        <h3>当前环境信息</h3>
+        <p><strong>访问地址：</strong><span id="currentUrl"></span></p>
+        <p><strong>主机名：</strong><span id="hostname"></span></p>
+        <p><strong>协议：</strong><span id="protocol"></span></p>
+        <p><strong>端口：</strong><span id="port"></span></p>
+        <p><strong>检测到的 API 地址：</strong><span id="apiUrl"></span></p>
+    </div>
+
+    <button onclick="runAllTests()">🚀 开始测试</button>
+    
+    <div id="results"></div>
+
+    <script>
+        // 显示当前环境信息
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('hostname').textContent = window.location.hostname;
+        document.getElementById('protocol').textContent = window.location.protocol;
+        document.getElementById('port').textContent = window.location.port || '(默认)';
+
+        // API URL 检测逻辑（与 api.ts 相同）
+        function getApiBaseUrl() {
+            const currentHost = window.location.hostname;
+            const currentProtocol = window.location.protocol;
+            
+            // 生产环境检测
+            if (currentHost.includes('hf.space') || 
+                currentHost.includes('huggingface.co') || 
+                currentHost.includes('modelscope.cn') ||
+                currentHost.includes('gradio.live')) {
+                return `${currentProtocol}//${currentHost}`;
+            }
+            
+            // 局域网访问检测
+            if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+                return `${currentProtocol}//${currentHost}:8000`;
+            }
+            
+            // 本地开发环境
+            return 'http://localhost:8000';
+        }
+
+        const API_BASE_URL = getApiBaseUrl();
+        document.getElementById('apiUrl').textContent = API_BASE_URL;
+
+        const tests = [
+            {
+                name: '健康检查 (/health)',
+                url: '/health',
+                method: 'GET'
+            },
+            {
+                name: 'API 状态 (/api/status)',
+                url: '/api/status',
+                method: 'GET'
+            },
+            {
+                name: '获取心情数据 (/api/moods)',
+                url: '/api/moods',
+                method: 'GET'
+            },
+            {
+                name: '获取灵感数据 (/api/inspirations)',
+                url: '/api/inspirations',
+                method: 'GET'
+            },
+            {
+                name: '获取待办数据 (/api/todos)',
+                url: '/api/todos',
+                method: 'GET'
+            },
+            {
+                name: '获取用户配置 (/api/user/config)',
+                url: '/api/user/config',
+                method: 'GET'
+            }
+        ];
+
+        async function runTest(test) {
+            const fullUrl = API_BASE_URL + test.url;
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch(fullUrl, {
+                    method: test.method,
+                    mode: 'cors',
+                    credentials: 'omit',
+                    signal: AbortSignal.timeout(10000)
+                });
+                
+                const duration = Date.now() - startTime;
+                const data = await response.json();
+                
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    duration: duration,
+                    data: data,
+                    error: null
+                };
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                return {
+                    success: false,
+                    status: 0,
+                    duration: duration,
+                    data: null,
+                    error: error.message
+                };
+            }
+        }
+
+        async function runAllTests() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>测试结果</h2>';
+            
+            for (const test of tests) {
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-item';
+                testDiv.innerHTML = `
+                    <strong>${test.name}</strong>
+                    <span class="status pending">测试中...</span>
+                    <div id="result-${test.url}"></div>
+                `;
+                resultsDiv.appendChild(testDiv);
+                
+                const result = await runTest(test);
+                const resultDiv = document.getElementById(`result-${test.url}`);
+                const statusSpan = testDiv.querySelector('.status');
+                
+                if (result.success) {
+                    statusSpan.className = 'status success';
+                    statusSpan.textContent = `✅ 成功 (${result.duration}ms)`;
+                    resultDiv.innerHTML = `
+                        <p><strong>状态码：</strong>${result.status}</p>
+                        <p><strong>响应数据：</strong></p>
+                        <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    `;
+                } else {
+                    statusSpan.className = 'status error';
+                    statusSpan.textContent = `❌ 失败 (${result.duration}ms)`;
+                    resultDiv.innerHTML = `
+                        <p><strong>错误信息：</strong>${result.error || '未知错误'}</p>
+                        <p><strong>状态码：</strong>${result.status || 'N/A'}</p>
+                    `;
+                }
+            }
+            
+            // 添加总结
+            const summary = document.createElement('div');
+            summary.className = 'info';
+            summary.innerHTML = `
+                <h3>📊 测试总结</h3>
+                <p>如果所有测试都失败，可能的原因：</p>
+                <ul>
+                    <li>🔥 防火墙阻止了端口 8000</li>
+                    <li>🌐 两台设备不在同一局域网</li>
+                    <li>🚫 路由器启用了 AP 隔离</li>
+                    <li>⚙️ 后端服务未正确启动</li>
+                </ul>
+                <p>请参考 <code>docs/局域网访问问题排查.md</code> 进行详细排查</p>
+            `;
+            resultsDiv.appendChild(summary);
+        }
+    </script>
+</body>
+</html>

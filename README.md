@@ -94,6 +94,79 @@ license: mit
 - **AI 服务**: 智谱 AI (GLM-4) + MiniMax
 - **部署**: Hugging Face Spaces (Docker)
 
+## 🔧 本地开发
+
+### 启动后端服务
+
+```bash
+# 安装依赖
+pip install -r requirements.txt
+
+# 配置环境变量（复制 .env.example 为 .env 并填写）
+cp .env.example .env
+
+# 启动服务（端口 8000）
+python scripts/start_local.py
+```
+
+### 构建前端
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+### 局域网访问
+
+1. 启动后端后，会显示局域网访问地址（如 `http://192.168.1.100:8000/`）
+2. 其他设备连接同一 WiFi 后，使用该地址访问
+3. 如果无法访问，请参考 [局域网访问快速修复指南](docs/局域网访问快速修复.md)
+
+**快速诊断**：
+```bash
+# Windows
+scripts\test_lan_access.bat
+
+# 或访问诊断页面
+http://你的IP:8000/test-connection.html
+```
+
+## 🐛 故障排查
+
+### 问题：其他设备访问显示 "Load failed"
+
+**原因**：防火墙阻止、网络隔离或 API 地址配置错误
+
+**解决方案**：
+1. 运行诊断工具：`scripts\test_lan_access.bat`
+2. 访问诊断页面：`http://你的IP:8000/test-connection.html`
+3. 查看详细指南：[局域网访问快速修复](docs/局域网访问快速修复.md)
+
+### 问题：语音识别失败
+
+**原因**：未配置 ZHIPU_API_KEY 或 API 配额不足
+
+**解决方案**：
+1. 检查 `.env` 文件中的 `ZHIPU_API_KEY`
+2. 访问 https://open.bigmodel.cn/ 检查配额
+
+### 问题：AI 形象生成失败
+
+**原因**：未配置 MINIMAX_API_KEY 或 API 配额不足
+
+**解决方案**：
+1. 检查 `.env` 文件中的 `MINIMAX_API_KEY` 和 `MINIMAX_GROUP_ID`
+2. 访问 https://platform.minimaxi.com/ 检查配额
+
+## 📚 文档
+
+- [功能架构图](docs/功能架构图.md)
+- [API 配置说明](docs/API_配置说明.md)
+- [局域网访问指南](docs/局域网访问指南.md)
+- [局域网访问快速修复](docs/局域网访问快速修复.md)
+- [心情气泡池功能说明](docs/心情气泡池功能说明.md)
+
 ## 📄 License
 
 MIT License
