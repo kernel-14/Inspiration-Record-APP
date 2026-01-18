@@ -2,8 +2,9 @@
 # Using tested stable versions that work together
 
 # Critical: These versions MUST be installed together
-huggingface-hub==0.23.5
-gradio==4.44.0
+# gradio 5.x requires huggingface-hub >= 0.25.0
+huggingface-hub==0.25.2
+gradio==5.9.1
 
 # Core dependencies (compatible with Python 3.11+)
 fastapi==0.115.0
