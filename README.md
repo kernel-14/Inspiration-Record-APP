@@ -12,6 +12,8 @@ license: mit
 
 一个温暖、治愈的 AI 陪伴应用，帮助你记录心情、捕捉灵感、管理待办。
 
+目前已上线huggingface，体验链接：https://huggingface.co/spaces/kernel14/Nora
+
 ## ✨ 核心特性
 
 - 🎤 **语音/文字快速记录** - 自动分类保存
@@ -85,6 +87,7 @@ license: mit
 - [详细文档](https://github.com/kernel-14/Nora/blob/main/README.md)
 - [智谱 AI](https://open.bigmodel.cn/)
 - [MiniMax](https://platform.minimaxi.com/)
+- [Huggingface](https://huggingface.co/spaces/kernel14/Nora)
 
 ## 📝 技术栈
 
